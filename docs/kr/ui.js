@@ -74,6 +74,19 @@
     boxText.addEventListener('click', onWordTap);
     dragBox(boxGrip, 'move'); dragBox(boxSize, 'size');
     pill.addEventListener('click', function () { openMenu('now'); });
+    // Press feedback like the other controls: quick shrink and amber tint, springing back on release.
+    // (While it is amber because text is on screen it keeps its own look.)
+    var releaseTimer = null;
+    ['touchstart', 'mousedown'].forEach(function (t) {
+      pill.addEventListener(t, function () { clearTimeout(releaseTimer); pill.classList.remove('kr-release'); pill.classList.add('kr-press'); }, { passive: true });
+    });
+    ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(function (t) {
+      pill.addEventListener(t, function () {
+        if (!pill.classList.contains('kr-press')) return;
+        pill.classList.remove('kr-press'); pill.classList.add('kr-release');
+        releaseTimer = setTimeout(function () { pill.classList.remove('kr-release'); }, 220);
+      }, { passive: true });
+    });
     sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
     krLayout();
   }
