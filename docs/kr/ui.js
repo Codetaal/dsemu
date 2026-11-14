@@ -11,7 +11,8 @@
   // Storage: the app's IndexedDB helper (kv.js) when present, otherwise localForage.
   var store = window.KV ? {
     getItem: function (k) { return KV.get('kr-' + k); },
-    setItem: function (k, v) { return KV.set('kr-' + k, v); }
+    setItem: function (k, v) { return KV.set('kr-' + k, v); },
+    removeItem: function (k) { return KV.del('kr-' + k); }
   } : window.localforage ? localforage.createInstance({ name: 'kr-vocab' }) : null;
   // lang: the game's language, set by the app when a game loads ('ko' Korean, 'ja' Japanese).
   var lang = 'ko', dicts = {}, dictLoading = {};
@@ -126,7 +127,7 @@
   }
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
-  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; },
+  window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; }, dueCount: function () { return dueCount(); },
     getStudy: function () { return settings.study; }, setStudy: setStudy,
     getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
@@ -464,7 +465,7 @@
     sheet.hidden = false; card.scrollTop = 0;
   }
   function closeSheet() {
-    sheet.hidden = true; resume(); menuTab = null;
+    sheet.hidden = true; resume(); menuTab = null; review = null;
     Array.prototype.forEach.call(document.querySelectorAll('.kr-sel'), function (n) { n.classList.remove('kr-sel'); });
     if (current) renderPanel();
   }
@@ -473,7 +474,7 @@
   // Which Words & text tab the word sheet's back button returns to: the tab the word was
   // tapped in, or Now when it was tapped in the subtitles.
   var menuTab = null, wordBack = 'now';
-  var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent' };
+  var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent', review: 'Review' };
   // l: the word's own language (a saved word from a game in the other language); default the game's.
   var wlang = 'ko';
   function openWord(raw, sentence, span, l) {
@@ -546,11 +547,16 @@
         if (to === status) return;
         var k = known[wlang];
         // Learning and Known exclude each other: a word you know leaves your saved list, and back.
-        if (to !== 'learning' && isSaved(word)) { saved = saved.filter(function (x) { return x.w !== word && x.base !== word && x.w !== base && x.base !== base; }); persist(); updatePill(); }
+        if (to !== 'learning' && isSaved(word)) {
+          saved = saved.filter(function (x) { var hit = x.w === word || x.base === word || x.w === base || x.base === base; if (hit) dropShot(x.t); return !hit; });
+          persist(); updatePill();
+        }
         if (to !== 'known') { delete k[word]; delete k[base]; }
         if (to === 'learning') {
-          saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: wlang,
-            place: place, game: game.name });
+          var t = Date.now();
+          saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: t, lang: wlang,
+            place: place, game: game.name, due: t, step: 0 });
+          snapshot(t);
           persist(); updatePill();
           toast('Saved: ' + base, 'star');
         } else if (to === 'known') { k[word] = 1; k[base] = 1; toast('Known: ' + base, 'ok'); }
@@ -599,12 +605,105 @@
     return h + '</div>';
   }
 
+  // ---------- review: saved words come back, with the moment you saved them ----------
+  // A simple spaced-repetition ladder. A new word is due right away; each "Got it" waits longer
+  // (1, 3, 7, 14, 30 days). "Got it" after the 30-day wait makes the word Known: it leaves the list.
+  // "Again" starts the ladder over and shows the word once more at the end of this session.
+  var LADDER = [1, 3, 7, 14, 30], DAY = 864e5;
+  function dueAt(x) { return typeof x.due === 'number' ? x.due : (x.t || 0); }
+  function dueList() { var n = Date.now(); return saved.filter(function (x) { return dueAt(x) <= n; }).sort(function (a, b) { return dueAt(a) - dueAt(b); }); }
+  function inDays(d) { return d === 1 ? 'tomorrow' : 'in ' + d + ' days'; }
+  // When a time is, in calendar days: "later today", "tomorrow", "in 3 days".
+  function whenText(ms) {
+    var d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    var d = Math.floor((ms - d0.getTime()) / DAY);
+    return d <= 0 ? 'later today' : inDays(d);
+  }
+  // A picture of the top screen (where the game's text box is) when the word is saved, as a small JPEG.
+  function snapshot(t) {
+    try {
+      var c = window.screenCanvas && screenCanvas[0];
+      if (c && store && window.emuIsGameLoaded) store.setItem('shot:' + t, c.toDataURL('image/jpeg', 0.75)).catch(function () {});
+    } catch (e) {}
+  }
+  function dropShot(t) { if (store && store.removeItem) store.removeItem('shot:' + t).catch(function () {}); }
+  // The session: the words due when it started, plus any you pressed Again on.
+  var review = null;   // { queue: [t, ...], open: false, done: 0 }
+  function reviewWord() { while (review && review.queue.length) { var t = review.queue[0], x = saved.filter(function (y) { return y.t === t; })[0]; if (x) return x; review.queue.shift(); } return null; }
+  function reviewHTML() {
+    if (!review) review = { queue: dueList().map(function (x) { return x.t; }), open: false, done: 0 };
+    var x = reviewWord();
+    if (!x) {
+      var next = saved.slice().sort(function (a, b) { return dueAt(a) - dueAt(b); })[0];
+      var msg = !saved.length ? 'No saved words yet. Tap a word in the subtitles and choose Learning; it comes back here to review.'
+        : 'Next review ' + whenText(dueAt(next)) + '.';
+      return '<div class="mt-6 flex flex-col items-center text-center">' + HI('check', 'size-10 text-emerald-500') +
+        '<p class="mt-2 text-lg font-bold">' + (review.done ? 'All done for now' : 'Nothing to review') + '</p>' +
+        (review.done ? '<p class="' + C.muted + '">' + review.done + (review.done === 1 ? ' review' : ' reviews') + ' this session.</p>' : '') +
+        '<p class="mt-1 px-4 ' + C.muted + '">' + msg + '</p></div>';
+    }
+    var left = review.queue.length, wl = x.lang || lang, step = x.step || 0;
+    var s1 = x.s || '', w = x.w || x.base;
+    var sentence = s1 && s1.indexOf(w) >= 0 ? esc(s1).split(esc(w)).join('<mark class="' + C.mark + '">' + esc(w) + '</mark>') : '';
+    var h = '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">' + left + ' to review</p>' +
+      '<div class="mt-1.5 ' + C.card + '">' +
+      '<img data-shot="' + x.t + '" alt="" class="kr-shot mx-auto mb-3 hidden ' + (review.open ? 'kr-shot-back h-24' : 'h-36') + ' w-auto rounded-lg ring-1 ring-zinc-900/10 dark:ring-white/10">' +
+      (sentence ? '<div class="flex items-start gap-1"><p class="kr-selectable flex-1 text-lg leading-relaxed">' + sentence + '</p>' +
+        '<button class="' + SPEAK_BTN + ' -my-1.5 -mr-2" data-act="rv-say-s" aria-label="Hear the sentence">' + HI('speaker-wave', 'size-5') + '</button></div>'
+        : '<p class="text-[30px] font-bold">' + esc(w) + '</p>') +
+      whereHTML(x.place, x.game, 'mt-2') + '</div>';
+    if (!review.open) {
+      h += '<p class="mt-3 px-1 ' + C.muted + '">What does ' + (sentence ? 'the marked word' : 'this word') + ' mean?</p>' +
+        '<button class="mt-2 ' + C.primary + '" data-act="rv-show">Show meaning</button>';
+    } else {
+      var gotDays = LADDER[step];
+      h += '<div class="mt-3 ' + C.card + '"><div class="flex items-center gap-1"><p class="kr-selectable min-w-0 flex-1 text-2xl font-bold">' + esc(x.base || x.w) +
+        (x.reading ? '<span class="ml-2 text-base font-normal text-zinc-500 dark:text-zinc-400">' + esc(x.reading) + '</span>' : '') + '</p>' +
+        '<button class="' + SPEAK_BTN + ' -mr-2" data-act="rv-say-w" aria-label="Hear the word">' + HI('speaker-wave', 'size-6') + '</button></div>' +
+        '<p class="mt-0.5 text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
+        '<button class="mt-1 text-sm font-medium text-amber-600 active:opacity-60 dark:text-amber-400" data-act="rv-more">More about this word</button></div>' +
+        '<div class="mt-3 grid grid-cols-2 gap-2">' +
+        '<button class="' + C.btn + ' flex-col !gap-0 !py-2" data-act="rv-again">Again<span class="text-xs font-normal text-zinc-500 dark:text-zinc-400">see it again soon</span></button>' +
+        '<button class="flex flex-col items-center justify-center rounded-xl bg-amber-400 px-3.5 py-2 font-semibold text-amber-950 shadow-sm active:scale-[0.98] active:bg-amber-300" data-act="rv-good">Got it' +
+          '<span class="text-xs font-normal text-amber-900/70">' + (gotDays ? 'see it ' + inDays(gotDays) : 'becomes Known') + '</span></button></div>' +
+        '<button class="mt-2 w-full py-2 text-sm font-medium text-zinc-500 active:opacity-60 dark:text-zinc-400" data-act="rv-known">' + HI('check', 'size-4 inline -mt-0.5') + ' I know this word, stop reviewing it</button>';
+    }
+    return h;
+  }
+  // Load the snapshot (if there is one) into the card after it is drawn.
+  function fillShots() {
+    Array.prototype.forEach.call(card.querySelectorAll('img[data-shot]'), function (img) {
+      if (!store) return;
+      store.getItem('shot:' + img.getAttribute('data-shot')).then(function (v) { if (v) { img.src = v; img.classList.remove('hidden'); } }).catch(function () {});
+    });
+  }
+  function reviewAnswer(how) {
+    var x = reviewWord(); if (!x) return;
+    review.queue.shift(); review.open = false; review.done++;
+    var n = Date.now();
+    if (how === 'again') { x.step = 0; x.due = n + 10 * 60000; review.queue.push(x.t); }
+    else if (how === 'good' && (x.step || 0) < LADDER.length) { x.due = n + LADDER[x.step || 0] * DAY; x.step = (x.step || 0) + 1; }
+    else {
+      // Last step passed, or "I know this word": Known, out of the saved list (Learning and Known exclude each other).
+      var k = known[x.lang || lang] || known[lang];
+      k[x.w] = 1; if (x.base) k[x.base] = 1; persistKnown();
+      saved = saved.filter(function (y) { return y !== x; }); dropShot(x.t);
+      toast('Known: ' + (x.base || x.w), 'ok');
+      if (current) renderPanel();
+    }
+    persist(); updatePill();
+    openMenu('review');
+  }
+  function dueCount() { return dueList().length; }
+
   // ---------- menu: saved words / recent text ----------
   function openMenu(tab) {
+    if (tab !== 'review') review = null;   // a new session each time you come to Review
     menuTab = tab;
     var tb = function (id, label) { return '<button class="' + C.tab + '" data-tab="' + id + '" aria-pressed="' + (tab === id) + '">' + label + '</button>'; };
     var h = '<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">' + tb('now', 'Now') +
-      tb('saved', HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + saved.length) + tb('recent', 'Recent') + '</div>';
+      tb('saved', HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + saved.length) + tb('recent', 'Recent') +
+      tb('review', 'Review' + (function (d) { return d ? '<span class="ml-0.5 rounded-full bg-amber-400 px-1.5 text-xs leading-5 text-amber-950">' + d + '</span>' : ''; })(review ? review.queue.length : dueCount())) + '</div>';
     if (tab === 'now') {
       // Current dialogue (what has been typed so far), else the last finished message.
       var nowText = current ? plain(current.text.slice(0, current.shown)) : (history.length ? history[history.length - 1] : '');
@@ -629,6 +728,8 @@
           '<div class="mt-2 grid grid-cols-2 gap-2"><button class="' + C.btn + '" data-act="export">Export for Anki</button><button class="' + C.btn + '" data-act="copy">Copy list</button></div>' +
           '<div id="kr-saved-list">' + savedListHTML(savedQuery) + '</div>';
       }
+    } else if (tab === 'review') {
+      h += reviewHTML();
     } else if (tab === 'recent') {
       var lines = history.slice().reverse();
       if (current) lines.unshift(plain(current.text));
@@ -643,6 +744,7 @@
       if (otherText.length) h += '<p class="mt-3 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Other text on screen</p>' + block(otherText.slice().reverse().slice(0, 60));
     }
     openSheet(h, true);
+    fillShots();
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
@@ -660,7 +762,7 @@
       }
       if (b.dataset.tab) return openMenu(b.dataset.tab);
       if (b.dataset.del) {
-        saved = saved.filter(function (x) { return String(x.t) !== b.dataset.del; }); persist(); updatePill();
+        saved = saved.filter(function (x) { var hit = String(x.t) === b.dataset.del; if (hit) dropShot(x.t); return !hit; }); persist(); updatePill();
         if (!saved.length) return openMenu('saved');
         card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery);
         var star = card.querySelector('[data-tab=saved]'); if (star) star.lastChild.textContent = saved.length;
@@ -671,6 +773,14 @@
       if (act === 'export') return exportCSV();
       if (act === 'say-now') { var nb = card.querySelector('.kr-now'); return speak(nb ? nb.getAttribute('data-s') : ''); }
       if (act === 'copy') return copyList();
+      var rx = reviewWord();
+      if (act === 'rv-show') { review.open = true; return openMenu('review'); }
+      if (act === 'rv-again') return reviewAnswer('again');
+      if (act === 'rv-good') return reviewAnswer('good');
+      if (act === 'rv-known') return reviewAnswer('known');
+      if (act === 'rv-say-s' && rx) return speak(rx.s, rx.lang);
+      if (act === 'rv-say-w' && rx) return speak(rx.base || rx.w, rx.lang);
+      if (act === 'rv-more' && rx) return openWord(rx.w, rx.s || '', null, rx.lang);
     };
   }
 
