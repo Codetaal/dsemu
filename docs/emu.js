@@ -32,18 +32,23 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '0.6.9';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '0.6.10';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+    var updating = false;   // set by Update now (Advanced menu)
+    // Reuse the existing registration (Update now may have registered it as sw.js?fresh=...);
+    // registering under another URL would reinstall everything on every start.
+    navigator.serviceWorker.getRegistration().then(function (r) {
+      return r || navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+    }).then(function (reg) {
       reg.update().catch(function () {});
       // Check again whenever the app comes back to the foreground.
       document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () {}); });
     }).catch(function () {});
     // A new version finished installing: reload right away on the start screen, otherwise offer it.
     navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (!hadController) { hadController = true; return; }
+      if (!hadController || updating) { hadController = true; return; }   // Update now reloads by itself
       if (uiCurrentMode !== 'player') location.reload();
       else toast('Update ready: Menu → Close game to apply', { icon: 'info', ms: 6000 });
     });
@@ -933,14 +938,27 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   }
   // Menu > Advanced > Update now: drop the offline copy of the app and load the newest one.
   // Games, saves and words live in IndexedDB (kv.js), not in this cache, so they stay.
+  // Installs a fresh offline copy and reloads from it. The worker is registered under a new script URL,
+  // which makes the browser install it again even if sw.js hasn't changed; its install downloads every
+  // file with ?v=... past the phone's and GitHub's caches. (Unregistering first doesn't work: the
+  // browser hands the old worker back while the page still uses it.) The current copy keeps working
+  // until the new one is ready.
   function updateNow() {
     if (emuIsGameLoaded && !confirm('This closes the game. Save in the game first if you need to.\n\nUpdate now?')) return;
-    toast('Updating…', { icon: 'info', ms: 4000 });
-    var done = function () { location.replace(location.pathname + '?u=' + Date.now()); };
-    var jobs = [];
-    if ('serviceWorker' in navigator) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
-    if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
-    Promise.all(jobs).then(done, done);
+    var reloaded = false;
+    var done = function () { if (reloaded) return; reloaded = true; location.replace(location.pathname + '?u=' + Date.now()); };
+    if (!('serviceWorker' in navigator)) return done();
+    toast('Downloading the newest version…', { icon: 'info', ms: 30000 });
+    updating = true;
+    var timer = setTimeout(function () { toast('Update is taking long. Check your connection and try again.', { icon: 'warn' }); updating = false; }, 45000);
+    navigator.serviceWorker.register('sw.js?fresh=' + Date.now(), { updateViaCache: 'none' }).then(function (reg) {
+      var w = reg.installing || reg.waiting;
+      if (!w) { clearTimeout(timer); return done(); }
+      w.addEventListener('statechange', function () {
+        if (w.state === 'activated') { clearTimeout(timer); done(); }
+        if (w.state === 'redundant') { clearTimeout(timer); updating = false; toast('Update failed. Check your connection and try again.', { icon: 'warn' }); }
+      });
+    }).catch(function () { clearTimeout(timer); updating = false; toast('Update failed. Check your connection and try again.', { icon: 'warn' }); });
   }
   function saveSettings() { KV.set('settings', settings).catch(function () {}); }
   function closeMenu() { $('menu').hidden = true; $('btn-menu').classList.remove('active'); emuIsRunning = wasRunning || emuIsGameLoaded; }
