@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.7
+- The translate button is 75% visible, and 90% while subtitles are on screen, whatever the controls opacity is set to.
+
 ## 0.6.6
 - The translate button is always 90% visible, whatever the controls opacity is set to, so it stands out.
 

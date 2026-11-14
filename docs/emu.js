@@ -32,7 +32,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '0.6.6';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '0.6.7';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -903,7 +903,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     menuLabels();
     $('menu').hidden = false;
   }
-  // The controls' transparency (the translate button keeps its own 90%, see kr/ui.css).
+  // The controls' transparency (the translate button keeps its own 75% / 90% active, see kr/ui.css).
   function setControlsOpacity(v) {
     $('controls').style.opacity = v;
     document.documentElement.style.setProperty('--ctl-opacity', String(v));
