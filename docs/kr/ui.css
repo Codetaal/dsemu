@@ -36,7 +36,7 @@
 #kr-pill .hi { width: 20px; height: 20px; stroke-width: 1.8; }
 /* Portrait: a slowly wobbling blob in the centre of the controls */
 #kr-pill.kr-big {
-  width: 48px; height: 48px; z-index: 7;
+  width: var(--pill, 48px); height: var(--pill, 48px); z-index: 7;
   /* Same glass look as the floating controls, but at a fixed 75% (whatever the Controls opacity
      setting), so it stands out; 90% while active (below). */
   background: rgba(255, 255, 255, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
@@ -44,7 +44,7 @@
   border-radius: 62% 38% 55% 45% / 48% 60% 40% 52%;
   animation: kr-blob 6s ease-in-out infinite;
 }
-#kr-pill.kr-big .hi { width: 24px; height: 24px; }
+#kr-pill.kr-big .hi { width: calc(var(--pill, 48px) / 2); height: calc(var(--pill, 48px) / 2); }
 /* Pressing it behaves like the other controls (app.css .btn.on): a quick shrink and amber tint,
    springing back a little slower on release. Not while it is amber (text on screen). */
 #kr-pill.kr-press:not(.kr-live), #kr-pill.kr-release:not(.kr-live) {

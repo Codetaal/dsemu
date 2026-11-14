@@ -338,7 +338,11 @@
     // Portrait: centred in the gap between menu/fast forward and SELECT. Landscape: top-left of the top screen.
     var spot = window.krPillSpot;
     pill.classList.toggle('kr-big', !!spot);
-    if (spot) { pill.style.left = (spot.x - 24) + 'px'; pill.style.top = (spot.y - 24) + 'px'; }
+    if (spot) {
+      var ps = spot.size || 48;
+      pill.style.setProperty('--pill', ps + 'px');
+      pill.style.left = (spot.x - ps / 2) + 'px'; pill.style.top = (spot.y - ps / 2) + 'px';
+    }
     // Landscape: in the empty band above the top screen when there is room, so it doesn't cover the L button.
     else { pill.style.left = (r.left + 6) + 'px'; pill.style.top = (r.top >= 44 ? Math.max(6, (r.top - 32) / 2) : r.top + 6) + 'px'; }
     // Both HeartGold and White draw the dialogue box on the top screen at DS pixels

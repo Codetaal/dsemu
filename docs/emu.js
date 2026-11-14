@@ -637,10 +637,11 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     place($('btn-menu'), mid - colW / 2, rowY + 2, colW / 2 - 3, h);
     place($('btn-ff'), mid + 3, rowY + 2, colW / 2 - 3, h);
     if (land) {
-      // Landscape: SELECT and START side by side at the bottom centre.
-      var sw2 = Math.min(84, colW);
-      place(btns.select, mid - sw2 - 4, ch - h - 10, sw2, h);
-      place(btns.start, mid + 4, ch - h - 10, sw2, h);
+      // Landscape: SELECT | translate button | START along the bottom centre. The translate button
+      // keeps the same size relative to the D-pad as in portrait (48 px next to a 152 px D-pad).
+      var sw2 = Math.min(84, colW), ps = Math.round(D * 48 / 152), pcy = ch - 10 - ps / 2;
+      place(btns.select, mid - ps / 2 - 10 - sw2, pcy - h / 2, sw2, h);
+      place(btns.start, mid + ps / 2 + 10, pcy - h / 2, sw2, h);
     } else {
       // Portrait: SELECT and START side by side at the bottom of the centre column, like menu / fast forward.
       place(btns.select, mid - colW / 2, ch - h - 10, colW / 2 - 3, h);
@@ -651,10 +652,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
     // The translate button (the blob) goes in the middle of the controls: in portrait between
-    // menu / fast forward and SELECT / START; in landscape in the black strip under the screens,
-    // above SELECT / START.
-    var spotTop = land ? Math.max(rowY + 2 + h, top + sh) : 6 + h;
-    window.krPillSpot = { x: C.left + mid, y: C.top + (spotTop + ch - h - 10) / 2 };
+    // menu / fast forward and SELECT / START; in landscape between SELECT and START.
+    window.krPillSpot = land ? { x: C.left + mid, y: C.top + pcy, size: ps }
+                             : { x: C.left + mid, y: C.top + (6 + h + ch - h - 10) / 2 };
     if (window.krLayout) krLayout();
   }
   // Portrait controls: a big D-pad and big face buttons for thumbs, low on the phone; the small buttons
