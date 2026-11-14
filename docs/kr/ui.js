@@ -24,7 +24,8 @@
   var otherText = [];         // other Korean text seen (menus, descriptions)
   // mode: 'box' = Pokémon-style box over the game's own text, 'bar' = bar at the top, 'off' = only via 가
   // study: false hides everything Korean-related (subtitles, translate button, word sheets) and stops reading.
-  var settings = { mode: 'box', study: true, debug: /krdebug/.test(location.search) };
+  var settings = { mode: 'box', frame: 'classic', study: true, debug: /krdebug/.test(location.search) };
+  var FRAMES = ['classic', 'gold', 'ball', 'ocean', 'forest', 'night', 'retro', 'sakura'];
   var frame = 0, views = null, hideTimer = null, current = null;
 
   // ---------- DOM ----------
@@ -102,7 +103,7 @@
     renderPanel();
   }
   function saveSettings() {
-    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study }).catch(function () {});
+    if (store) store.setItem('settings', { mode: settings.mode, box: boxGeo, study: settings.study, frame: settings.frame }).catch(function () {});
   }
   function setStudy(on) {
     settings.study = !!on;
@@ -118,10 +119,16 @@
     }
     renderPanel();
   }
+  function setFrame(f) {
+    settings.frame = FRAMES.indexOf(f) >= 0 ? f : 'classic';
+    box.dataset.frame = settings.frame;
+    saveSettings();
+  }
   function resetBox() { boxGeo = {}; saveSettings(); krLayout(); toast('Subtitle box reset', 'ok'); }
   window.KRReaderStats = function () { return reader.stats; };
   window.KRSettings = { getMode: function () { return settings.mode; }, setMode: setMode, savedCount: function () { return saved.length; },
-    getStudy: function () { return settings.study; }, setStudy: setStudy };
+    getStudy: function () { return settings.study; }, setStudy: setStudy,
+    getFrame: function () { return settings.frame; }, setFrame: setFrame, frames: FRAMES };
   window.KRUI = { open: function (tab) { openMenu(tab || 'now'); }, resetBox: resetBox };
 
   function loadSaved() {
@@ -133,6 +140,8 @@
       settings.mode = v.mode || (v.subs === false ? 'off' : v.subs === true ? 'bar' : 'box');
       if (v.box && typeof v.box === 'object') boxGeo = v.box;
       settings.study = v.study !== false;
+      settings.frame = FRAMES.indexOf(v.frame) >= 0 ? v.frame : 'classic';
+      box.dataset.frame = settings.frame;
       applyStudy();
       krLayout();
       renderPanel();

@@ -925,6 +925,10 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Study mode off: hide every study-related row.
     $('m-subs-row').hidden = !study; $('m-words-row').hidden = !study;
     $('m-reset-box').hidden = !study || !window.KRSettings || KRSettings.getMode() !== 'box';
+    $('m-frame-row').hidden = $('m-reset-box').hidden;
+    var fr = window.KRSettings && KRSettings.getFrame ? KRSettings.getFrame() : 'classic';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-frame-pick]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.framePick === fr)); });
+    var frb = document.querySelector('[data-frame-pick="' + fr + '"]'); $('m-frame-name').textContent = frb ? frb.getAttribute('aria-label').replace(' frame', '') : '';
     $('m-words').innerHTML = window.KRSettings ? HI('star', 'size-4 text-amber-500 relative -top-[1.25px]') + KRSettings.savedCount() : '';
     var st = window.KRReaderStats ? KRReaderStats() : null;
     $('m-info').innerHTML = 'Version ' + APP_VERSION + ' · ' + (gameID ? gameID.trim() : '') +
@@ -981,6 +985,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       if (seg === 'subs' && window.KRSettings) KRSettings.setMode(v);
       return menuLabels();
     }
+    var fp = e.target.closest('[data-frame-pick]');
+    if (fp && window.KRSettings) { KRSettings.setFrame(fp.dataset.framePick); menuLabels(); return; }
     var el = e.target.closest('[data-m]'), m = el && el.dataset.m;
     if (m === 'resume') closeMenu();
     if (m === 'sound') { settings.sound = !settings.sound; saveSettings(); menuLabels(); }

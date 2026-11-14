@@ -78,26 +78,41 @@
 }
 
 /* Pokémon-style text box drawn over the game's own dialogue box. Sizes scale with --k (CSS px per DS px). */
+/* Frames (Menu > Study > Box frame), in the spirit of the games' own Frame option. Original designs,
+   no game artwork: each frame is a set of colours, also used by the menu's swatches. */
+#kr-box, .kr-frame-swatch {
+  --f-bg: #fbfbfb; --f-border: #6f7378; --f-inner: #d8dadc; --f-text: #4a4a4a; --f-shadow: #cfcfd2;
+  --f-arrow: #e0503c; --f-saved: #b07a00; --f-line: rgba(80, 80, 80, 0.3); --f-radius: 6px; --f-bw: 2.2px; --f-iw: 1.4px; --f-ring: transparent;
+}
+#kr-box[data-frame="gold"], .kr-frame-swatch[data-frame="gold"]   { --f-bg: #fffaf0; --f-border: #a8741f; --f-inner: #f2cf72; --f-text: #4a3a1e; --f-shadow: #ead9b4; --f-arrow: #c0561d; }
+#kr-box[data-frame="ball"], .kr-frame-swatch[data-frame="ball"]   { --f-bg: #ffffff; --f-border: #e0453c; --f-inner: #ffffff; --f-ring: #2c2c2e; --f-text: #333; --f-shadow: #d9d9dc; --f-arrow: #e0453c; }
+#kr-box[data-frame="ocean"], .kr-frame-swatch[data-frame="ocean"]  { --f-bg: #f4f9ff; --f-border: #3a6db3; --f-inner: #a8cdf3; --f-text: #22364f; --f-shadow: #cfdff1; --f-arrow: #2f7fd6; }
+#kr-box[data-frame="forest"], .kr-frame-swatch[data-frame="forest"] { --f-bg: #f5fbf0; --f-border: #3d8448; --f-inner: #b6dfa2; --f-text: #2d4128; --f-shadow: #d6e8cb; --f-arrow: #d0702a; }
+#kr-box[data-frame="night"], .kr-frame-swatch[data-frame="night"]  { --f-bg: #1f2434; --f-border: #8b94ba; --f-inner: #3a4262; --f-text: #f1f3ff; --f-shadow: #000000; --f-arrow: #ffd666;
+                        --f-saved: #ffd666; --f-line: rgba(255, 255, 255, 0.35); }
+#kr-box[data-frame="retro"], .kr-frame-swatch[data-frame="retro"]  { --f-bg: #e6eecb; --f-border: #222a18; --f-inner: #e6eecb; --f-text: #222a18; --f-shadow: transparent; --f-arrow: #222a18;
+                        --f-radius: 0px; --f-bw: 2.6px; --f-iw: 0px; --f-saved: #7a4d00; --f-line: rgba(34, 42, 24, 0.35); }
+#kr-box[data-frame="sakura"], .kr-frame-swatch[data-frame="sakura"] { --f-bg: #fff7fa; --f-border: #d27394; --f-inner: #f9d0df; --f-text: #5a3a48; --f-shadow: #f0dbe3; --f-arrow: #d27394; }
 #kr-box {
   position: fixed; z-index: 5; box-sizing: border-box;
-  background: #fbfbfb; border: calc(2.2px * var(--k, 1.46)) solid #6f7378; border-radius: calc(6px * var(--k, 1.46));
-  box-shadow: inset 0 0 0 calc(1.4px * var(--k, 1.46)) #d8dadc;
+  background: var(--f-bg); border: calc(var(--f-bw) * var(--k, 1.46)) solid var(--f-border); border-radius: calc(var(--f-radius) * var(--k, 1.46));
+  box-shadow: inset 0 0 0 calc(var(--f-iw) * var(--k, 1.46)) var(--f-inner), inset 0 0 0 calc((var(--f-iw) + 1px) * var(--k, 1.46)) var(--f-ring);
   /* Text starts where the game's own text starts (x = 13 DS pixels). */
   padding: calc(6px * var(--k, 1.46)) calc(20px * var(--k, 1.46)) 0 calc(11px * var(--k, 1.46));
-  color: #4a4a4a; font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700;
+  color: var(--f-text); font-family: 'Apple SD Gothic Neo', -apple-system, 'Noto Sans KR', sans-serif; font-weight: 700;
   font-size: calc(11.6px * var(--k, 1.46)); line-height: calc(16px * var(--k, 1.46)); letter-spacing: 0.01em;
-  text-shadow: calc(0.9px * var(--k, 1.46)) calc(0.9px * var(--k, 1.46)) 0 #cfcfd2;
+  text-shadow: calc(0.9px * var(--k, 1.46)) calc(0.9px * var(--k, 1.46)) 0 var(--f-shadow);
   white-space: nowrap; overflow: hidden;
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
 }
 #kr-box.kr-hidden { display: none; }
-#kr-box .kr-w { border-bottom: 2px dotted rgba(80, 80, 80, 0.3); border-radius: 2px; }
-#kr-box .kr-w.kr-saved { color: #b07a00; border-bottom-color: #e2a400; }
+#kr-box .kr-w { border-bottom: 2px dotted var(--f-line); border-radius: 2px; }
+#kr-box .kr-w.kr-saved { color: var(--f-saved); border-bottom-color: #e2a400; }
 #kr-box .kr-w:active, #kr-box .kr-w.kr-sel { background: rgba(255, 214, 102, 0.55); }
 .kr-box-arrow {
   position: absolute; right: calc(12px * var(--k, 1.46) + 14px); bottom: calc(7px * var(--k, 1.46));
   border-left: calc(5px * var(--k, 1.46)) solid transparent; border-right: calc(5px * var(--k, 1.46)) solid transparent;
-  border-top: calc(5.5px * var(--k, 1.46)) solid #e0503c;
+  border-top: calc(5.5px * var(--k, 1.46)) solid var(--f-arrow);
   animation: kr-bob 0.9s ease-in-out infinite;
 }
 /* Move grip (top centre) and resize handle (bottom-right corner) */
@@ -107,7 +122,7 @@
 }
 .kr-box-grip::after {
   content: ''; position: absolute; left: 50%; top: 10px; width: 40px; height: 6px; margin-left: -20px;
-  border-radius: 3px; background: #6f7378; box-shadow: 0 0 0 1.5px #fbfbfb;
+  border-radius: 3px; background: var(--f-border); box-shadow: 0 0 0 1.5px var(--f-bg);
 }
 .kr-box-size {
   position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; touch-action: none; cursor: nwse-resize;
@@ -119,7 +134,18 @@
 #kr-box { overflow: visible; }
 /* Room below the second line so its dotted underline isn't clipped */
 #kr-box .kr-box-text { overflow: hidden; padding-bottom: calc(4px * var(--k, 1.46)); }
-#kr-box.kr-dragging { box-shadow: inset 0 0 0 calc(1.4px * var(--k, 1.46)) #d8dadc, 0 6px 20px rgba(0, 0, 0, 0.35); }
+#kr-box.kr-dragging { box-shadow: inset 0 0 0 calc(var(--f-iw) * var(--k, 1.46)) var(--f-inner), 0 6px 20px rgba(0, 0, 0, 0.35); }
+/* Menu swatches: a tiny version of each frame. */
+.kr-frame-swatch {
+  --k: 0.9; display: block; width: 40px; height: 28px; box-sizing: border-box; flex-shrink: 0;
+  background: var(--f-bg); border: calc(var(--f-bw) * var(--k)) solid var(--f-border); border-radius: calc(var(--f-radius) * var(--k));
+  box-shadow: inset 0 0 0 calc(var(--f-iw) * var(--k)) var(--f-inner), inset 0 0 0 calc((var(--f-iw) + 1px) * var(--k)) var(--f-ring);
+  position: relative;
+}
+.kr-frame-swatch::after {   /* two lines of "text" */
+  content: ''; position: absolute; left: 5px; right: 9px; top: 7px; height: 2.5px; border-radius: 2px; background: var(--f-text); opacity: 0.55;
+  box-shadow: 0 6px 0 var(--f-text);
+}
 @keyframes kr-bob { 50% { transform: translateY(calc(1.5px * var(--k, 1.46))); } }
 
 /* Heroicons on the game screen */
