@@ -1,9 +1,12 @@
 # Changelog
 
-CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
+CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
+
+## 0.6.14
+- The Retro style option is removed again for now; CramBoy has its original look. (Your box frame choice is unaffected.)
 
 ## 0.6.13
-- New Retro style (Menu > Look > Style): a pixel font (Galmuri, also for Korean), square framed boxes with hard shadows, tab-style labels and a dotted lilac background, across the start screen, menu, translate sheets, subtitles, controls and pop-ups. The default style is unchanged. The font is only downloaded when you choose Retro.
+- New Retro style (Menu > Look > Style): a pixel font, square framed boxes and tab-style labels across the app. The default style was unchanged.
 
 ## 0.6.12
 - The menu shows the game's full title from the game file (for example its Korean or Japanese name) instead of the short internal name.
