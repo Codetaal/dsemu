@@ -2,6 +2,10 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.9
+- Menu > Advanced > Update now: loads the newest version right away (handy for the home-screen app, which updates separately from Safari). Your games, saves and words stay.
+- Updates are more reliable on a phone: a file that fails to download is tried again instead of dropping the whole update.
+
 ## 0.6.8
 - Fix: updates always download fresh files. Quick releases could mix in an older file from GitHub's server cache (0.6.7 could show the previous translate button transparency).
 

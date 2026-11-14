@@ -32,7 +32,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
   if (isIOS && !standalone) $('ios-hint').hidden = false;
-  var APP_VERSION = '0.6.8';   // semantic version; keep in sync with sw.js
+  var APP_VERSION = '0.6.9';   // semantic version; keep in sync with sw.js
   $('ver').textContent = 'Version ' + APP_VERSION;
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     var hadController = !!navigator.serviceWorker.controller;
@@ -931,6 +931,17 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   function setSeg(name, v) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-seg=' + name + '] button'), function (b) { b.setAttribute('aria-pressed', b.dataset.v === v ? 'true' : 'false'); });
   }
+  // Menu > Advanced > Update now: drop the offline copy of the app and load the newest one.
+  // Games, saves and words live in IndexedDB (kv.js), not in this cache, so they stay.
+  function updateNow() {
+    if (emuIsGameLoaded && !confirm('This closes the game. Save in the game first if you need to.\n\nUpdate now?')) return;
+    toast('Updating…', { icon: 'info', ms: 4000 });
+    var done = function () { location.replace(location.pathname + '?u=' + Date.now()); };
+    var jobs = [];
+    if ('serviceWorker' in navigator) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+    if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+    Promise.all(jobs).then(done, done);
+  }
   function saveSettings() { KV.set('settings', settings).catch(function () {}); }
   function closeMenu() { $('menu').hidden = true; $('btn-menu').classList.remove('active'); emuIsRunning = wasRunning || emuIsGameLoaded; }
   // Controls opacity slider: live while dragging; the menu fades meanwhile so the controls show through.
@@ -958,6 +969,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (m === 'export') exportSave();
     if (m === 'import') $('file-save').click();
     if (m === 'words' && window.KRUI) { closeMenu(); KRUI.open('saved'); }
+    if (m === 'update') return updateNow();
     if (m === 'advanced') {
       var open = $('m-advanced').hidden; $('m-advanced').hidden = !open;
       $('m-adv-chev').style.transform = open ? 'rotate(90deg)' : '';

@@ -1,6 +1,6 @@
 // Offline cache for the app. Bump the version here and APP_VERSION in emu.js whenever any file changes
 // (semantic versioning: patch = fixes, minor = features, major = big changes).
-var VERSION = 'cramboy-v0.6.8';
+var VERSION = 'cramboy-v0.6.9';
 var FILES = ['./', './index.html', './tw.css', './app.css', './kv.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png', './icons/cheeselab-logo-512.png',
   './build/nds.js', './build/nds.wasm',
   './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ja-lookup.js', './kr/ui.js', './kr/dict.json'];
@@ -13,10 +13,13 @@ self.addEventListener('install', function (e) {
   // file). The file is stored under its plain name.
   e.waitUntil(caches.open(VERSION).then(function (c) {
     return Promise.all(FILES.map(function (f) {
-      return fetch(new Request(f + (f.indexOf('?') < 0 ? '?' : '&') + 'v=' + encodeURIComponent(VERSION), { cache: 'reload' })).then(function (r) {
-        if (!r.ok) throw new Error(f + ' ' + r.status);
-        return c.put(f, r);
-      });
+      var url = f + (f.indexOf('?') < 0 ? '?' : '&') + 'v=' + encodeURIComponent(VERSION);
+      var get = function () {
+        return fetch(new Request(url, { cache: 'reload' })).then(function (r) { if (!r.ok) throw new Error(f + ' ' + r.status); return r; });
+      };
+      // One retry per file: on a phone a single dropped request shouldn't throw the whole update away.
+      return get().catch(function () { return new Promise(function (ok) { setTimeout(ok, 1500); }).then(get); })
+        .then(function (r) { return c.put(f, r); });
     }));
   }).then(function () { return self.skipWaiting(); }));
 });
