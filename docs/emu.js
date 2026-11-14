@@ -903,7 +903,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     menuLabels();
     $('menu').hidden = false;
   }
-  // The controls' transparency; the translate button follows it a little stronger (kr/ui.css).
+  // The controls' transparency (the translate button keeps its own 90%, see kr/ui.css).
   function setControlsOpacity(v) {
     $('controls').style.opacity = v;
     document.documentElement.style.setProperty('--ctl-opacity', String(v));

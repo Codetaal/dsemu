@@ -37,10 +37,10 @@
 /* Portrait: a slowly wobbling blob in the centre of the controls */
 #kr-pill.kr-big {
   width: 48px; height: 48px; z-index: 7;
-  /* Same see-through look as the floating controls, a little less transparent so it stands out
-     (--ctl-opacity follows the Controls opacity setting; the button is always 20 points stronger). */
+  /* Same glass look as the floating controls, but only 10% transparent (whatever the Controls
+     opacity setting), so it stands out. */
   background: rgba(255, 255, 255, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  opacity: calc(var(--ctl-opacity, 0.8) + 0.2);
+  opacity: 0.9;
   border-radius: 62% 38% 55% 45% / 48% 60% 40% 52%;
   animation: kr-blob 6s ease-in-out infinite;
 }
@@ -55,7 +55,7 @@
   transition-duration: 50ms;
 }
 /* Active (text on screen): only 10% transparent, so the amber is clear. */
-#kr-pill.kr-big.kr-live { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); opacity: max(0.9, calc(var(--ctl-opacity, 0.8) + 0.2)); }
+#kr-pill.kr-big.kr-live { background: #ffd666; color: #16181f; box-shadow: 0 0 0 3px rgba(255, 214, 102, 0.3); opacity: 0.9; }
 @keyframes kr-blob {
   0%, 100% { border-radius: 62% 38% 55% 45% / 48% 60% 40% 52%; }
   33% { border-radius: 40% 60% 42% 58% / 60% 44% 56% 40%; }
