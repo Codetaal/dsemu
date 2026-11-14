@@ -587,7 +587,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
     var vp = viewSize(), W = vp.w, H = vp.h, ctl = $('controls'), sw, sh, top;
     var floating = true;   // controls always float over the bottom screen (Below was removed)
-    // Portrait: the controls area is as tall as the big D-pad and face buttons need (see layoutPortrait),
+    // Portrait: the controls area is as tall as the big D-pad and face buttons need (see portraitGeom),
     // but never more than 36% of the screen.
     var ctrlH = Math.max(165, Math.min(PORTRAIT.need(W) + 16, H * 0.36));
     $('controls').classList.toggle('floating', floating);
@@ -610,64 +610,9 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
     setTouchMode(touchMode);
-    if (H >= W) { layoutPortrait(C, cw, ch); return; }
-    var pad = 14, topRow = H >= W ? 52 : 40;           // L / R row (portrait: more room below it)
-    var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
-    var land = W > H;
-    // Landscape: the screens sit at the top and the controls keep their full size, low on the phone
-    // near the bottom edge; they may overlap the screens a little (see-through there).
-    var cy = land ? ch - D / 2 - 14 : topRow + (ch - topRow) / 2;
-    dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
-    place($('dpad'), dpadRect.x, dpadRect.y, D, D);
-    var b = D * 0.37, ax = cw - pad - D / 2;
-    place(btns.x, ax - b / 2, cy - D / 2, b, b);
-    place(btns.b, ax - b / 2, cy + D / 2 - b, b, b);
-    place(btns.y, ax - D / 2, cy - b / 2, b, b);
-    place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
-    var pw = Math.min(84, D * 0.75), ph = 30;
-    // L / R and menu / fast forward sit just above the D-pad and face buttons. In portrait that is
-    // the top of the controls; in landscape it keeps them away from the screen's top edge.
-    var rowY = H >= W ? 4 : Math.max(4, dpadRect.y - ph - 12);
-    place(btns.l, pad, rowY, pw, ph);
-    place(btns.r, cw - pad - pw, rowY, pw, ph);
-    // Centre column between the D-pad and the face buttons.
-    var colW = Math.min(84, cw - 2 * (pad + D) - 12), mid = cw / 2, h = 26;
-    place($('btn-menu'), mid - colW / 2, rowY + 2, colW / 2 - 3, h);
-    place($('btn-ff'), mid + 3, rowY + 2, colW / 2 - 3, h);
-    if (land) {
-      // Landscape: SELECT and START side by side at the bottom centre.
-      var sw2 = Math.min(84, colW);
-      place(btns.select, mid - sw2 - 4, ch - h - 10, sw2, h);
-      place(btns.start, mid + 4, ch - h - 10, sw2, h);
-    } else {
-      // Portrait: SELECT and START side by side at the bottom of the centre column, like menu / fast forward.
-      place(btns.select, mid - colW / 2, ch - h - 10, colW / 2 - 3, h);
-      place(btns.start, mid + 3, ch - h - 10, colW / 2 - 3, h);
-    }
-    // Menus and word sheets are always 80% of the screen height, in portrait and landscape.
-    var sheetH = Math.round(H * 0.8) + 'px';
-    document.documentElement.style.setProperty('--sheet-h', sheetH);
-    document.documentElement.style.setProperty('--sheet-max', sheetH);
-    // The translate button (the blob) goes in the middle of the controls: in portrait between
-    // menu / fast forward and SELECT / START; in landscape in the middle, level with the centre of
-    // the D-pad, at the same size relative to the D-pad as in portrait (48 px next to 152 px).
-    var ps = Math.round(D * 48 / 152);
-    window.krPillSpot = land ? { x: C.left + mid, y: C.top + cy, size: ps }
-                             : { x: C.left + mid, y: C.top + (6 + h + ch - h - 10) / 2 };
-    // The hide-controls button: in the middle above the translate button, like in portrait.
-    var tw = 39;
-    place($('btn-touch'), mid - tw / 2, cy - ps / 2 - 12 - h, tw, h);
-    $('btn-touch').hidden = false;
-    // Touch areas, like portrait. The D-pad area is everything around the D-pad below L (the top
-    // screen under it is not a touch screen). The face buttons go by angle within a circle a bit
-    // bigger than their cluster: the bottom screen is right next to them, so it can't be the whole
-    // right side as in portrait.
-    var zt = C.top + rowY + ph + 2;
-    touchZones = {
-      pad: { left: C.left, right: C.left + pad + D + 40, top: zt, bottom: C.top + C.height, cx: C.left + pad + D / 2, cy: C.top + cy, D: D },
-      face: { left: C.left + ax - D / 2 - 16, right: C.left + ax + D / 2 + 16, top: zt, bottom: C.top + C.height, r: D / 2 + 16, cx: C.left + ax, cy: C.top + cy, D: D }
-    };
-    if (window.krLayout) krLayout();
+    // One controls system for both orientations: only the sizes and positions differ (portraitGeom /
+    // landscapeGeom); placing, the touch areas and how touches work are shared (applyControls, onTouch).
+    applyControls(C, H >= W ? portraitGeom(cw, ch) : landscapeGeom(cw, ch));
   }
   // Portrait controls: a big D-pad and big face buttons for thumbs, low on the phone; the small buttons
   // keep their slim size.
@@ -680,45 +625,84 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // Height the controls need for that D-pad.
     need: function (cw) { return this.top + this.lrH + this.gap + this.widthD(cw) + this.bottom; }
   };
-  function layoutPortrait(C, cw, ch) {
+  // Sizes and positions per orientation, in controls coordinates. Each returns:
+  //   D (D-pad / face cluster size), b (face button size), pad (side margin), cy (cluster centre y),
+  //   lr {y, w, h} for L / R, menu / ff / select / start / touch [x, y, w, h], pill {y, size},
+  //   zone: touch areas: padRight (D-pad area's right edge), face {left, right, r} (r: a circle, 0 for the rectangle).
+  function portraitGeom(cw, ch) {
     var P = PORTRAIT, pad = P.pad;
     var D = Math.min(P.widthD(cw), ch - (P.top + P.lrH + P.gap + P.bottom));
-    // The clusters sit at the bottom and the top row right above them; any spare height (Below mode
-    // can have more room than needed) stays above the top row, so Below and Floating look the same.
+    // The clusters sit at the bottom and the top row right above them.
     var cy = ch - P.bottom - D / 2;
     var rowY = Math.max(P.top, cy - D / 2 - P.gap - P.lrH);
-    dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
-    place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     // Face buttons: neighbours (Y-X, X-A, ...) keep at least 14 px between them, so a thumb hits one
     // button at a time. They get as large as that spacing allows, up to 40% of the cluster.
-    var GAP = 14, b = Math.min(D * 0.4, (D * Math.SQRT1_2 - GAP) / (1 + Math.SQRT1_2)), ax = cw - pad - D / 2;
+    var GAP = 14, b = Math.min(D * 0.4, (D * Math.SQRT1_2 - GAP) / (1 + Math.SQRT1_2));
+    var mid = cw / 2, sw = P.smallW, sh = P.smallH;
+    var spot = 30, sy = rowY + (P.lrH - sh) / 2;   // room for the translate button between menu and fast forward
+    return {
+      D: D, b: b, pad: pad, cy: cy, lr: { y: rowY, w: 84, h: P.lrH },
+      menu: [mid - spot - 4 - sw, sy, sw, sh], ff: [mid + spot + 4, sy, sw, sh],
+      // SELECT above START in the middle, level with the lower half of the clusters; the hide-controls button above them.
+      select: [mid - sw / 2, cy + D / 2 - 2 * sh - 8, sw, sh], start: [mid - sw / 2, cy + D / 2 - sh, sw, sh],
+      touch: [mid - sw / 2, cy + D / 2 - 3 * sh - 26, sw, sh],
+      // Translate button: in the top row between menu and fast forward.
+      pill: { y: rowY + P.lrH / 2, size: 48 },
+      // The whole left part is the D-pad, the whole right part the face buttons.
+      zone: { padRight: mid - sw / 2 - 6, face: { left: mid + sw / 2 + 6, right: cw, r: 0 } }
+    };
+  }
+  function landscapeGeom(cw, ch) {
+    var pad = 14, topRow = 40;
+    var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
+    // The screens sit at the top and the controls keep their full size, low on the phone near the
+    // bottom edge; they may overlap the screens a little (see-through there).
+    var cy = ch - D / 2 - 14, ax = cw - pad - D / 2;
+    var pw = Math.min(84, D * 0.75), ph = 30, rowY = Math.max(4, cy - D / 2 - ph - 12);   // L / R just above the clusters
+    var colW = Math.min(84, cw - 2 * (pad + D) - 12), mid = cw / 2, h = 26, sw2 = Math.min(84, colW);
+    // Translate button: in the middle, level with the centre of the D-pad, at the same size relative
+    // to the D-pad as in portrait (48 px next to 152 px). The hide-controls button above it.
+    var ps = Math.round(D * 48 / 152), tw = 39;
+    return {
+      D: D, b: D * 0.37, pad: pad, cy: cy, lr: { y: rowY, w: pw, h: ph },
+      menu: [mid - colW / 2, rowY + 2, colW / 2 - 3, h], ff: [mid + 3, rowY + 2, colW / 2 - 3, h],
+      // SELECT and START side by side at the bottom centre.
+      select: [mid - sw2 - 4, ch - h - 10, sw2, h], start: [mid + 4, ch - h - 10, sw2, h],
+      touch: [mid - tw / 2, cy - ps / 2 - 12 - h, tw, h],
+      pill: { y: cy, size: ps },
+      // The D-pad area is everything around the D-pad below L (the top screen under it is not a touch
+      // screen). The face buttons go by angle within a circle a bit bigger than their cluster: the
+      // bottom screen is right next to them, so it can't be the whole right side as in portrait.
+      zone: { padRight: pad + D + 40, face: { left: ax - D / 2 - 16, right: ax + D / 2 + 16, r: D / 2 + 16 } }
+    };
+  }
+  // Places the controls from a geometry and sets up the touch areas: the same for both orientations.
+  function applyControls(C, g) {
+    var D = g.D, b = g.b, pad = g.pad, cy = g.cy, cw = C.width, ax = cw - pad - D / 2, mid = cw / 2;
+    dpadRect = { x: pad, y: cy - D / 2, w: D, h: D };
+    place($('dpad'), dpadRect.x, dpadRect.y, D, D);
     place(btns.x, ax - b / 2, cy - D / 2, b, b);
     place(btns.b, ax - b / 2, cy + D / 2 - b, b, b);
     place(btns.y, ax - D / 2, cy - b / 2, b, b);
     place(btns.a, ax + D / 2 - b, cy - b / 2, b, b);
-    // Slim buttons, the same size as before: L / R 84 x 30, the others 39 x 26.
-    var mid = cw / 2, sw = P.smallW, sh = P.smallH, pw = 84;
-    place(btns.l, pad, rowY, pw, P.lrH);
-    place(btns.r, cw - pad - pw, rowY, pw, P.lrH);
-    var spot = 30, sy = rowY + (P.lrH - sh) / 2;   // room for the translate button between menu and fast forward
-    place($('btn-menu'), mid - spot - 4 - sw, sy, sw, sh);
-    place($('btn-ff'), mid + spot + 4, sy, sw, sh);
-    // SELECT above START in the middle, level with the lower half of the clusters; the touch-mode
-    // button above them.
-    place(btns.select, mid - sw / 2, cy + D / 2 - 2 * sh - 8, sw, sh);
-    place(btns.start, mid - sw / 2, cy + D / 2 - sh, sw, sh);
-    place($('btn-touch'), mid - sw / 2, cy + D / 2 - 3 * sh - 26, sw, sh);
+    place(btns.l, pad, g.lr.y, g.lr.w, g.lr.h);
+    place(btns.r, cw - pad - g.lr.w, g.lr.y, g.lr.w, g.lr.h);
+    place.apply(null, [$('btn-menu')].concat(g.menu));
+    place.apply(null, [$('btn-ff')].concat(g.ff));
+    place.apply(null, [btns.select].concat(g.select));
+    place.apply(null, [btns.start].concat(g.start));
+    place.apply(null, [$('btn-touch')].concat(g.touch));
     $('btn-touch').hidden = false;
+    // Menus and word sheets are always 80% of the screen height.
     var sheetH = Math.round(viewSize().h * 0.8) + 'px';
     document.documentElement.style.setProperty('--sheet-h', sheetH);
     document.documentElement.style.setProperty('--sheet-max', sheetH);
-    window.krPillSpot = { x: C.left + mid, y: C.top + rowY + P.lrH / 2 };
-    // Touch areas (screen coordinates): the whole left part of the controls is the D-pad, the whole right
-    // part the face buttons. They start just under the top row and run to the bottom of the phone.
-    var zt = C.top + rowY + P.lrH + 2, zb = C.top + C.height;
+    window.krPillSpot = { x: C.left + mid, y: C.top + g.pill.y, size: g.pill.size };
+    // Touch areas (screen coordinates): they start just under L / R and run to the bottom of the phone.
+    var zt = C.top + g.lr.y + g.lr.h + 2, zb = C.top + C.height, f = g.zone.face;
     touchZones = {
-      pad: { left: C.left, right: C.left + mid - sw / 2 - 6, top: zt, bottom: zb, cx: C.left + pad + D / 2, cy: C.top + cy, D: D },
-      face: { left: C.left + mid + sw / 2 + 6, right: C.left + cw, top: zt, bottom: zb, cx: C.left + ax, cy: C.top + cy, D: D }
+      pad: { left: C.left, right: C.left + g.zone.padRight, top: zt, bottom: zb, cx: C.left + pad + D / 2, cy: C.top + cy, D: D },
+      face: { left: C.left + f.left, right: C.left + f.right, top: zt, bottom: zb, r: f.r, cx: C.left + ax, cy: C.top + cy, D: D }
     };
     if (window.krLayout) krLayout();
   }
@@ -798,7 +782,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     e.preventDefault();
     unlockAudio();
     var keys = 0, td = 0, bottom = screenCanvas[1].getBoundingClientRect();
-    var dp = $('dpad').getBoundingClientRect(), dpCls = '';
+    var dpCls = '';
     var menuDown = false, ffDown = false, live = {}, padAt = null;
     var started = {};
     if (e.type === 'touchstart') for (var c = 0; c < e.changedTouches.length; c++) started[e.changedTouches[c].identifier || 0] = 1;
@@ -832,7 +816,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
         keys |= pk.keys; dpCls += pk.cls; padAt = pk.o; continue;
       }
       for (var k in btns) {
-        if (touchZones && /^[abxy]$/.test(k)) continue;   // portrait: face buttons go by area, below
+        if (touchZones && /^[abxy]$/.test(k)) continue;   // face buttons go by area, below
         if (hit(btns[k], x, y)) { keys |= 1 << KEYS[k]; found = true; }
       }
       if (hit($('btn-menu'), x, y)) { menuDown = true; continue; }
@@ -845,18 +829,6 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
           keys |= pk2.keys; dpCls += pk2.cls; padAt = pk2.o; continue;
         }
         if (inZone(touchZones.pad, x, y)) continue;   // a thumb slid in from elsewhere: not a game tap
-      }
-      // D-pad: 8-way by angle from centre, with a generous area.
-      var dx = x - (dp.left + dp.width / 2), dy = y - (dp.top + dp.height / 2);
-      var onBottom = x >= bottom.left && x <= bottom.right && y >= bottom.top && y <= bottom.bottom;
-      var zone = settings.controls === 'floating' ? 0.56 : 0.7;   // floating: stay close to the pad so the touchscreen stays usable
-      if ((!onBottom || settings.controls === 'floating') && Math.abs(dx) < dp.width * zone && Math.abs(dy) < dp.height * zone && Math.hypot(dx, dy) > dp.width * 0.08) {
-        var a = Math.atan2(dy, dx) * 180 / Math.PI;
-        if (a > -67.5 && a < 67.5) { keys |= 1 << KEYS.right; dpCls += ' r'; }
-        if (a > 112.5 || a < -112.5) { keys |= 1 << KEYS.left; dpCls += ' l'; }
-        if (a > 22.5 && a < 157.5) { keys |= 1 << KEYS.down; dpCls += ' d'; }
-        if (a < -22.5 && a > -157.5) { keys |= 1 << KEYS.up; dpCls += ' u'; }
-        continue;
       }
       // A touch just next to a button or the D-pad is a missed press, not a tap on the game:
       // ignore it within 15 px of any control. The open space between controls still works.

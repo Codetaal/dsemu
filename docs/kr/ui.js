@@ -33,7 +33,7 @@
   var panel = el('div', { id: 'kr-panel', className: 'kr-hidden' });
   var textBox = el('div', { className: 'kr-text' });
   panel.appendChild(textBox);
-  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Words', innerHTML: HI('language') });
+  var pill = el('button', { id: 'kr-pill', ariaLabel: 'Words', innerHTML: HI('academic-cap') });
   var box = el('div', { id: 'kr-box', className: 'kr-hidden' });
   var boxText = el('div', { className: 'kr-box-text' });
   var boxArrow = el('div', { className: 'kr-box-arrow' });
@@ -806,7 +806,7 @@
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast('Copied', 'ok'); }, function () { toast('Copy failed', 'warn'); });
   }
 
-  function updatePill() { if (!settings.debug) pill.innerHTML = HI('language'); }
+  function updatePill() { if (!settings.debug) pill.innerHTML = HI('academic-cap'); }
   // Uses the app-wide toast (emu.js), so every notification looks the same.
   function toast(msg, icon) { if (window.toast) window.toast(msg, { icon: icon }); }
 
