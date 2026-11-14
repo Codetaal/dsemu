@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.8
+- Fix: updates always download fresh files. Quick releases could mix in an older file from GitHub's server cache (0.6.7 could show the previous translate button transparency).
+
 ## 0.6.7
 - The translate button is 75% visible, and 90% while subtitles are on screen, whatever the controls opacity is set to.
 
