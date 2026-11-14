@@ -2,6 +2,11 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.12
+- The menu shows the game's full title from the game file (for example its Korean or Japanese name) instead of the short internal name.
+- The highlight around the chosen box frame is no longer cut off at the top.
+- The menu fades almost completely while you drag the opacity slider, so you can see the controls clearly.
+
 ## 0.6.11
 - Subtitle box frames: pick one of eight frames in Menu > Study > Box frame (shown with In box): Classic, Gold, Poké Ball, Ocean, Forest, Night, Retro and Sakura. Original designs in the spirit of the games' own Frame option.
 
