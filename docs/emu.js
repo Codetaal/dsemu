@@ -258,7 +258,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       var s = ''; for (var i = 0; i < 0x80; i++) { var c = b[off + i * 2] | (b[off + i * 2 + 1] << 8); if (!c) break; s += String.fromCharCode(c); }
       return s;
     }
-    var t = (ver >= 3 && str(0x940).trim()) || str(0x340).trim();   // Korean title if present, else English
+    // Japanese games: the Japanese title; otherwise Korean if present, else English.
+    var t = ((h.code || '').charAt(3) === 'J' && str(0x240).trim()) || (ver >= 3 && str(0x940).trim()) || str(0x340).trim();
     if (t) { var lines = t.split('\n'); h.banner = (lines.length > 1 ? lines.slice(0, -1) : lines).join(' ').trim(); }
     var pal = [];
     for (var p = 0; p < 16; p++) {
@@ -903,7 +904,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     wasRunning = emuIsRunning; emuIsRunning = false;
     touchKeys = 0; touchDown = 0;
     checkSave(true);
-    $('menu-title').textContent = gameTitle || 'Menu';
+    // The game's own title from its banner (as on the DS menu); the short header name as a fallback.
+    $('menu-title').textContent = gameBanner || gameTitle || 'Menu';
     $('m-advanced').hidden = true; $('m-adv-chev').style.transform = '';
     menuLabels();
     $('menu').hidden = false;

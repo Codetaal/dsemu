@@ -83,4 +83,4 @@ body.touch-mode #controls, body.touch-mode #kr-pill { visibility: hidden; }
 
 /* Dragging the controls opacity slider: the menu fades so the controls behind it show through. */
 #menu.peek { background: transparent; }
-#menu.peek .menu-card { opacity: 0.35; transition: opacity 0.15s; }
+#menu.peek .menu-card { opacity: 0.12; transition: opacity 0.15s; }
