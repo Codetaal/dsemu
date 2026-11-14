@@ -17,7 +17,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
   // ctlOpacity: how see-through the floating controls are (portrait; landscape is 15 points stronger).
-  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.45 };
+  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7 };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
