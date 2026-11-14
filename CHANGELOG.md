@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.15
+- Landscape: the translate button is now as big relative to the controls as in portrait, and sits in the middle, level with the D-pad.
+
 ## 0.6.14
 - The Retro style option is removed again for now; CramBoy has its original look. (Your box frame choice is unaffected.)
 
