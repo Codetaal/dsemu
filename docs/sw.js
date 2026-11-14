@@ -1,6 +1,6 @@
 // Offline cache for the app. Bump the version here and APP_VERSION in emu.js whenever any file changes
 // (semantic versioning: patch = fixes, minor = features, major = big changes).
-var VERSION = 'cramboy-v0.6.12';
+var VERSION = 'cramboy-v0.6.13';
 var FILES = ['./', './index.html', './tw.css', './app.css', './kv.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png', './icons/cheeselab-logo-512.png',
   './build/nds.js', './build/nds.wasm',
   './retro.css', './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ja-lookup.js', './kr/ui.js', './kr/dict.json'];

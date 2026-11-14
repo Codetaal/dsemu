@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.13
+- New Retro style (Menu > Look > Style): a pixel font (Galmuri, also for Korean), square framed boxes with hard shadows, tab-style labels and a dotted lilac background, across the start screen, menu, translate sheets, subtitles, controls and pop-ups. The default style is unchanged. The font is only downloaded when you choose Retro.
+
 ## 0.6.12
 - The menu shows the game's full title from the game file (for example its Korean or Japanese name) instead of the short internal name.
 - The highlight around the chosen box frame is no longer cut off at the top.
