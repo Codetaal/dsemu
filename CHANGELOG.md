@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.5
+- The translate button reacts to a press like the other controls: a quick shrink and amber tint, springing back when you let go. While it is amber (text on screen) it keeps its look.
+
 ## 0.6.4
 - The menu is grouped into Study, Controls, Saves and More. The top button is now "Play" (back to the game). "Saved words & recent text" sits under Study, and "Resume where you left off" moved from Advanced to Saves.
 
