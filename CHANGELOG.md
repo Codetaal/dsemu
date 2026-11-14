@@ -2,6 +2,12 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.8.0
+- New Review: your saved words come back for review (after 1, 3, 7, 14 and 30 days). Each card shows the sentence from the game, the place and a snapshot of the screen from when you saved the word. "Got it" after the last step makes the word Known. Find it in the words sheet (Review tab) or in the menu (Review words).
+- Saved words: tap a word in the list to open it (meaning, hear it, New / Learning / Known).
+- Portrait and landscape now share one controls system; only sizes and positions differ.
+- New icons: an academic cap on the translate button, a fingerprint on the hide-controls button, and the CramLab logo redrawn in the CramBoy pixel style.
+
 ## 0.7.0
 - Landscape gets the portrait touch controls: the D-pad follows your thumb, you can slide between the face buttons, and pressing between two presses both.
 - Landscape gets the hide-controls button (in the middle, above the translate button); the handle at the bottom brings the controls back.
