@@ -5,15 +5,15 @@ Run: python3 tools/make_cramlab_icon.py [palette] [out.png]   (palettes: amber, 
 from PIL import Image
 import os, sys
 
-# C cream, O holes. The shadow (D) is added automatically one pixel right and below.
+# C cream, O holes and the rim line under the collar (where the neck meets the body). The shadow (D) is added automatically one pixel right and below.
 FLASK = [
     "................",
     "................",
     "....CCCCCCCC....",
     "......CCCC......",
     "......CCCC......",
-    "......CCCC......",
     ".....CCCCCC.....",
+    ".....OOOOOOO....",
     "....CCCCCCCC....",
     "....CCOCCCCC....",
     "...CCCCCCCCCC...",
