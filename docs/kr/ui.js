@@ -207,14 +207,15 @@
   // ---------- hear it ----------
   // The phone's own voices (Korean / Japanese are built into iPhone): offline and free.
   var VOICE_LANG = { ko: 'ko-KR', ja: 'ja-JP' };
-  function speak(text) {
+  function speak(text, l) {
+    var sl = l || lang;
     text = String(text || '').replace(/[\u200B·…]+/g, ' ').trim();
     if (!text) return;
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { toast('Speech isn’t available here', 'warn'); return; }
-    var want = VOICE_LANG[lang], voices = speechSynthesis.getVoices();
+    var want = VOICE_LANG[sl], voices = speechSynthesis.getVoices();
     var v = voices.filter(function (x) { return x.lang && x.lang.replace('_', '-').indexOf(want) === 0; })[0] ||
-            voices.filter(function (x) { return x.lang && x.lang.indexOf(lang) === 0; })[0];
-    if (voices.length && !v) { toast('No ' + (lang === 'ja' ? 'Japanese' : 'Korean') + ' voice on this device', 'warn'); return; }
+            voices.filter(function (x) { return x.lang && x.lang.indexOf(sl) === 0; })[0];
+    if (voices.length && !v) { toast('No ' + (sl === 'ja' ? 'Japanese' : 'Korean') + ' voice on this device', 'warn'); return; }
     speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(text);
     u.lang = want; u.rate = 0.9;
@@ -473,9 +474,12 @@
   // tapped in, or Now when it was tapped in the subtitles.
   var menuTab = null, wordBack = 'now';
   var TAB_LABEL = { now: 'Now', saved: 'Saved words', recent: 'Recent' };
-  function openWord(raw, sentence, span) {
+  // l: the word's own language (a saved word from a game in the other language); default the game's.
+  var wlang = 'ko';
+  function openWord(raw, sentence, span, l) {
+    wlang = l || lang;
     var word = KRLookup.clean(raw);
-    if (lang === 'ja') {
+    if (wlang === 'ja') {
       wordBack = menuTab || 'now';
       if (span) span.classList.add('kr-sel');
       openSheet('<p class="' + C.muted + '">Looking up…</p>');
@@ -486,13 +490,13 @@
     wordBack = menuTab || 'now';
     if (span) span.classList.add('kr-sel');
     openSheet('<p class="' + C.muted + '">Looking up…</p>');
-    loadDict().then(function (d) { showWord(word, raw, sentence, KRLookup.lookup(d, raw, 3)); })
+    loadDict(wlang).then(function (d) { showWord(word, raw, sentence, KRLookup.lookup(d, raw, 3)); })
       .catch(function () { showWord(word, raw, sentence, null); });
   }
 
   function showWord(word, raw, sentence, hits) {
     var savedNow = isSaved(word), OUT = HI('arrow-top-right-on-square', 'size-4 text-zinc-400');
-    var base = hits && hits[0] ? hits[0].word : word, knownNow = !savedNow && !!(known[lang][word] || known[lang][base]);
+    var base = hits && hits[0] ? hits[0].word : word, knownNow = !savedNow && !!(known[wlang][word] || known[wlang][base]);
     // One status per word: New, Learning (saved to your list) or Known (no underline in the subtitles).
     var status = savedNow ? 'learning' : knownNow ? 'known' : 'new';
     var segBtn = function (st, label, icon, on) {
@@ -508,7 +512,7 @@
       segBtn('learning', 'Learning', 'star', 'bg-amber-400 text-amber-950 shadow-sm') +
       segBtn('known', 'Known', 'check', 'bg-emerald-500 text-white shadow-sm') + '</div>';
     if (hits === null) h += '<p class="mt-3 ' + C.muted + '">Dictionary not available offline yet. Use the links below.</p>';
-    else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try ' + LANG[lang].dictName + ' below, or long‑press the word above → Look Up.</p>';
+    else if (!hits.length) h += '<p class="mt-3 ' + C.muted + '">Not in the offline dictionary. Try ' + LANG[wlang].dictName + ' below, or long‑press the word above → Look Up.</p>';
     else {
       h += '<div class="mt-3 ' + C.list + '">';
       hits.forEach(function (x) {
@@ -527,25 +531,25 @@
     var where = savedNow ? savedEntry(word) : null;
     h += whereHTML(where ? where.place : place, where ? where.game : game.name, 'mt-2 px-1');
     h += '<div class="mt-3 grid ' + (sentence ? 'grid-cols-2' : 'grid-cols-1') + ' gap-2">' +
-      '<a class="' + C.btn + '" target="_blank" rel="noopener" href="' + LANG[lang].dictUrl + encodeURIComponent(base) + '">' + LANG[lang].dictName + ' ' + OUT + '</a>' +
-      (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=' + lang + '&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
+      '<a class="' + C.btn + '" target="_blank" rel="noopener" href="' + LANG[wlang].dictUrl + encodeURIComponent(base) + '">' + LANG[wlang].dictName + ' ' + OUT + '</a>' +
+      (sentence ? '<a class="' + C.btn + '" target="_blank" rel="noopener" href="https://translate.google.com/?sl=' + wlang + '&tl=en&op=translate&text=' + encodeURIComponent(sentence) + '">Google ' + OUT + '</a>' : '') +
       '</div>';
     card.onclick = null;
     openSheet(h, true);
     card.querySelector('[data-act=close]').onclick = closeSheet;
     card.querySelector('[data-act=back]').onclick = function () { openMenu(wordBack); };
-    card.querySelector('[data-act=say-word]').onclick = function () { speak(word); };
-    if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence); };
+    card.querySelector('[data-act=say-word]').onclick = function () { speak(word, wlang); };
+    if (sentence) card.querySelector('[data-act=say-sentence]').onclick = function () { speak(sentence, wlang); };
     Array.prototype.forEach.call(card.querySelectorAll('[data-status]'), function (btn) {
       btn.onclick = function () {
         var to = btn.dataset.status;
         if (to === status) return;
-        var k = known[lang];
+        var k = known[wlang];
         // Learning and Known exclude each other: a word you know leaves your saved list, and back.
         if (to !== 'learning' && isSaved(word)) { saved = saved.filter(function (x) { return x.w !== word && x.base !== word && x.w !== base && x.base !== base; }); persist(); updatePill(); }
         if (to !== 'known') { delete k[word]; delete k[base]; }
         if (to === 'learning') {
-          saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: lang,
+          saved.push({ w: word, base: base, reading: hits && hits[0] ? hits[0].reading || '' : '', gloss: hits && hits[0] ? hits[0].gloss : '', s: sentence || '', t: Date.now(), lang: wlang,
             place: place, game: game.name });
           persist(); updatePill();
           toast('Saved: ' + base, 'star');
@@ -584,7 +588,8 @@
         h += '<p class="mt-4 px-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">' + g + '</p><div class="mt-1.5 ' + C.list + '">';
         group = g;
       }
-      h += '<div class="flex items-start gap-2 px-4 py-3"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
+      // Tapping a word opens its word sheet (meaning, Learning / Known, hear it); the back button returns here.
+      h += '<div class="flex cursor-pointer items-start gap-2 px-4 py-3 active:bg-zinc-100 dark:active:bg-zinc-800" data-open="' + x.t + '"><div class="min-w-0 flex-1"><p class="font-bold">' + esc(x.base || x.w) +
         (x.reading ? ' <span class="font-normal ' + C.muted + '">' + esc(x.reading) + '</span>' : '') +
         (x.base && x.base !== x.w ? ' <span class="font-normal ' + C.muted + '">' + esc(x.w) + '</span>' : '') + '</p>' +
         '<p class="text-zinc-600 dark:text-zinc-300">' + esc(x.gloss || '—') + '</p>' +
@@ -641,8 +646,13 @@
     var search = card.querySelector('#kr-search');
     if (search) search.oninput = function () { savedQuery = search.value; card.querySelector('#kr-saved-list').innerHTML = savedListHTML(savedQuery); };
     card.onclick = function (e) {
-      var b = e.target.closest('[data-tab],[data-act],[data-del],.kr-w');
+      var b = e.target.closest('[data-tab],[data-act],[data-del],[data-open],.kr-w');
       if (!b) return;
+      if (b.dataset.open) {
+        var x = saved.filter(function (y) { return String(y.t) === b.dataset.open; })[0];
+        if (x) openWord(x.w, x.s || '', null, x.lang);
+        return;
+      }
       if (b.classList.contains('kr-w')) {
         var line = b.closest('[data-s]');
         openWord(b.getAttribute('data-w'), line ? line.getAttribute('data-s') : '', null);
