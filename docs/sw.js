@@ -3,9 +3,9 @@
 var VERSION = 'cramboy-v0.6.12';
 var FILES = ['./', './index.html', './tw.css', './app.css', './kv.js', './icons.js', './emu.js', './manifest.json', './icon-180.png', './icon-512.png', './icons/cheeselab-logo-512.png',
   './build/nds.js', './build/nds.wasm',
-  './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ja-lookup.js', './kr/ui.js', './kr/dict.json'];
-// Downloaded only when first needed (Japanese games), then kept for offline use.
-var ON_DEMAND = ['kr/ja-dict.json'];
+  './retro.css', './kr/ui.css', './kr/table.js', './kr/reader.js', './kr/lookup.js', './kr/ja-lookup.js', './kr/ui.js', './kr/dict.json'];
+// Downloaded only when first needed (Japanese games, the retro style's font), then kept for offline use.
+var ON_DEMAND = ['kr/ja-dict.json', 'fonts/Galmuri11.woff2', 'fonts/Galmuri11-Bold.woff2'];
 
 self.addEventListener('install', function (e) {
   // cache: 'reload' bypasses the browser's HTTP cache, and the ?v= query bypasses GitHub Pages' own

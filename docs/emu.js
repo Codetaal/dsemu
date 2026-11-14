@@ -17,7 +17,15 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
   // ctlOpacity: how see-through the floating controls are (portrait; landscape is 15 points stronger).
-  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7 };
+  var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7, theme: 'default' };
+  // Style (Menu > Look): 'default' or 'retro' (retro.css). Also kept in localStorage so it applies
+  // before the settings have loaded, without a flash of the other style.
+  function applyTheme(t) {
+    settings.theme = t === 'retro' ? 'retro' : 'default';
+    document.body.classList.toggle('retro', settings.theme === 'retro');
+    try { localStorage.setItem('cramboy-theme', settings.theme); } catch (e) {}
+  }
+  try { applyTheme(localStorage.getItem('cramboy-theme')); } catch (e) {}
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
   // ---------- startup ----------
@@ -27,7 +35,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     $('btn-open').disabled = false;
     loadLibrary().then(renderLibrary).catch(function () {});
   };
-  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; } }).catch(function () {});
+  KV.get('settings').then(function (s) { if (s) { settings.sound = s.sound !== false; settings.controls = 'floating'; /* the Below layout was removed */ settings.resume = s.resume === true; if (s.ctlOpacity >= 0.15 && s.ctlOpacity <= 1) settings.ctlOpacity = s.ctlOpacity; applyTheme(s.theme); } }).catch(function () {});
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = window.navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
@@ -921,6 +929,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var snd = document.querySelector('[data-m=sound]');
     snd.innerHTML = HI(settings.sound ? 'speaker-wave' : 'speaker-x-mark', 'size-5'); snd.classList.toggle('opacity-60', !settings.sound);
     setSeg('subs', window.KRSettings ? KRSettings.getMode() : 'bar');
+    setSeg('theme', settings.theme);
     $('m-resume').setAttribute('aria-checked', String(!!settings.resume));
     var study = !window.KRSettings || KRSettings.getStudy();
     $('m-study').setAttribute('aria-checked', String(study));
@@ -937,6 +946,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       (lastLoadError ? '<br>Last load problem (retried): ' + lastLoadError.replace(/</g, '&lt;') : '') +
       (st ? '<br>Reader: ' + st.strings + ' strings in memory, ' + st.korean + ' in the game’s language, ' + st.printers + ' being printed' : '') +
       '<br>The game saves automatically a few seconds after you save in‑game.' +
+      '<br>Retro font: Galmuri by Lee Minseo (SIL OFL 1.1).' +
       '<br>Emulator: desmume‑wasm (GPL‑2.0). Character table and Pokémon names: PKHeX (GPL‑3.0). Dictionaries: kengdic (MPL‑2.0), JMdict by the EDRDG (CC BY‑SA 4.0). Icons: Heroicons (MIT).';
   }
   function setSeg(name, v) {
@@ -985,6 +995,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     if (segBtn) {
       var seg = segBtn.parentNode.dataset.seg, v = segBtn.dataset.v;
       if (seg === 'subs' && window.KRSettings) KRSettings.setMode(v);
+      if (seg === 'theme') { applyTheme(v); saveSettings(); }
       return menuLabels();
     }
     var fp = e.target.closest('[data-frame-pick]');
