@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.11
+- Subtitle box frames: pick one of eight frames in Menu > Study > Box frame (shown with In box): Classic, Gold, Poké Ball, Ocean, Forest, Night, Retro and Sakura. Original designs in the spirit of the games' own Frame option.
+
 ## 0.6.10
 - Fix: Update now could load an older version from the phone's or GitHub's cache. It now downloads a complete fresh copy first and reloads from that.
 - The controls are 70% visible by default (was 45%). You can still change it in Menu > Controls > Opacity.
