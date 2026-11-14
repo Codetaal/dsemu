@@ -2,6 +2,9 @@
 
 CheeseLab uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.6.6
+- The translate button is always 90% visible, whatever the controls opacity is set to, so it stands out.
+
 ## 0.6.5
 - The translate button reacts to a press like the other controls: a quick shrink and amber tint, springing back when you let go. While it is amber (text on screen) it keeps its look.
 
