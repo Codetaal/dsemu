@@ -16,7 +16,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
   var touchKeys = 0, keyboardKeys = 0, touchDown = 0, touchX = 0, touchY = 0;
   var fastForward = false, frameNo = 0, lastT = 0, acc = 0;
   var prevSaveFlag = 0, saveDirty = false;
-  // ctlOpacity: how see-through the floating controls are (portrait; landscape is 15 points stronger).
+  // ctlOpacity: how see-through the floating controls are (the same in portrait and landscape).
   var settings = { sound: true, controls: 'floating', resume: false, ctlOpacity: 0.7 };
 
   var TAGLINE = '';   // no slogan; the line only shows status messages
@@ -604,7 +604,7 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
       place(screenCanvas[0], W / 2 - sw, top, sw, sh);
       place(screenCanvas[1], W / 2, top, sw, sh);
       ctl.style.top = '0px'; ctl.style.height = H + 'px';
-      setControlsOpacity(Math.min(1, settings.ctlOpacity + 0.15));
+      setControlsOpacity(settings.ctlOpacity);
     }
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
