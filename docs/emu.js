@@ -609,10 +609,8 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     var C = ctl.getBoundingClientRect(), cw = C.width, ch = C.height;
     // Portrait: keep the controls a bit further up from the bottom edge of the phone.
     if (H >= W) ch -= 16;
-    if (H >= W) { setTouchMode(touchMode); layoutPortrait(C, cw, ch); return; }
-    touchZones = null;
-    // Touch mode is portrait only: landscape always shows the controls.
-    $('btn-touch').hidden = true; document.body.classList.remove('touch-mode'); $('ctl-handle').hidden = true;
+    setTouchMode(touchMode);
+    if (H >= W) { layoutPortrait(C, cw, ch); return; }
     var pad = 14, topRow = H >= W ? 52 : 40;           // L / R row (portrait: more room below it)
     var D = Math.min(ch - topRow - 10, cw * 0.34, 170);
     var land = W > H;
@@ -653,8 +651,22 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     // The translate button (the blob) goes in the middle of the controls: in portrait between
     // menu / fast forward and SELECT / START; in landscape in the middle, level with the centre of
     // the D-pad, at the same size relative to the D-pad as in portrait (48 px next to 152 px).
-    window.krPillSpot = land ? { x: C.left + mid, y: C.top + cy, size: Math.round(D * 48 / 152) }
+    var ps = Math.round(D * 48 / 152);
+    window.krPillSpot = land ? { x: C.left + mid, y: C.top + cy, size: ps }
                              : { x: C.left + mid, y: C.top + (6 + h + ch - h - 10) / 2 };
+    // The hide-controls button: in the middle above the translate button, like in portrait.
+    var tw = 39;
+    place($('btn-touch'), mid - tw / 2, cy - ps / 2 - 12 - h, tw, h);
+    $('btn-touch').hidden = false;
+    // Touch areas, like portrait. The D-pad area is everything around the D-pad below L (the top
+    // screen under it is not a touch screen). The face buttons go by angle within a circle a bit
+    // bigger than their cluster: the bottom screen is right next to them, so it can't be the whole
+    // right side as in portrait.
+    var zt = C.top + rowY + ph + 2;
+    touchZones = {
+      pad: { left: C.left, right: C.left + pad + D + 40, top: zt, bottom: C.top + C.height, cx: C.left + pad + D / 2, cy: C.top + cy, D: D },
+      face: { left: C.left + ax - D / 2 - 16, right: C.left + ax + D / 2 + 16, top: zt, bottom: C.top + C.height, r: D / 2 + 16, cx: C.left + ax, cy: C.top + cy, D: D }
+    };
     if (window.krLayout) krLayout();
   }
   // Portrait controls: a big D-pad and big face buttons for thumbs, low on the phone; the small buttons
@@ -722,20 +734,22 @@ var emuIsRunning = false, emuIsGameLoaded = false, uiCurrentMode = 'home';
     return x >= r.left - slop && x <= r.right + slop && y >= r.top - slop && y <= r.bottom + slop;
   }
   var CONTROL_MARGIN = 15;
-  // Touch mode (portrait): all controls and the translate button hidden, the whole touch screen is free.
+  // Touch mode: all controls and the translate button hidden, the whole touch screen is free.
   // Subtitle text stays and can still be tapped. The handle at the bottom brings the controls back;
   // nothing else does (manual only).
   var touchMode = false, ignoreTouches = {};
   function setTouchMode(on) {
     touchMode = !!on;
-    var portrait = viewSize().h >= viewSize().w;
-    document.body.classList.toggle('touch-mode', touchMode && portrait);
-    $('ctl-handle').hidden = !(touchMode && portrait) || uiCurrentMode !== 'player';
+    document.body.classList.toggle('touch-mode', touchMode);
+    $('ctl-handle').hidden = !touchMode || uiCurrentMode !== 'player';
     if (touchMode) { touchKeys = 0; padTouches = {}; for (var k in btns) btns[k].classList.remove('on'); $('dpad').className = ''; $('dpad').style.translate = ''; }
   }
-  // Portrait touch areas, set by layoutPortrait (null in landscape).
+  // Touch areas for the D-pad and face buttons, set by layout.
   var touchZones = null;
-  function inZone(z, x, y) { return z && x >= z.left && x <= z.right && y >= z.top && y <= z.bottom; }
+  function inZone(z, x, y) {
+    if (!z || x < z.left || x > z.right || y < z.top || y > z.bottom) return false;
+    return !z.r || Math.hypot(x - z.cx, y - z.cy) <= z.r;   // landscape face buttons: a circle
+  }
   // Floating D-pad: each thumb on the D-pad area has its own centre. A thumb that lands on the D-pad
   // itself uses the D-pad's centre (so tapping an arm still works); a thumb that lands anywhere else
   // in the area becomes the centre, and the D-pad moves under it. Sliding further than the D-pad's
