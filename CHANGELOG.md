@@ -2,6 +2,9 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.8.1
+- CramLab logo: the rim line under the flask's collar is back, like the old logo.
+
 ## 0.8.0
 - New Review: your saved words come back for review (after 1, 3, 7, 14 and 30 days). Each card shows the sentence from the game, the place and a snapshot of the screen from when you saved the word. "Got it" after the last step makes the word Known. Find it in the words sheet (Review tab) or in the menu (Review words).
 - Saved words: tap a word in the list to open it (meaning, hear it, New / Learning / Known).
