@@ -2,6 +2,11 @@
 
 CramBoy uses [semantic versioning](https://semver.org): patch = fixes, minor = new features, major = big changes.
 
+## 0.7.0
+- Landscape gets the portrait touch controls: the D-pad follows your thumb, you can slide between the face buttons, and pressing between two presses both.
+- Landscape gets the hide-controls button (in the middle, above the translate button); the handle at the bottom brings the controls back.
+- The controls opacity is the same in portrait and landscape (landscape was 15% stronger).
+
 ## 0.6.15
 - Landscape: the translate button is now as big relative to the controls as in portrait, and sits in the middle, level with the D-pad.
 
